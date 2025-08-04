@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use App\Interface\TransactionRepositoryInterface;
 use App\Models\Transaction;
 use Illuminate\Pagination\LengthAwarePaginator;
 

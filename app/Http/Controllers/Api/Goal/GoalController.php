@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api\Goal;
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 use App\Services\GoalService;
+use Illuminate\Http\Request;
 
 
 class GoalController extends Controller

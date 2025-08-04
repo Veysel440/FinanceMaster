@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Repositories\CategoryRepositoryInterface;
+use App\Interface\CategoryRepositoryInterface;
 use Illuminate\Support\Facades\Auth;
 
 class CategoryService

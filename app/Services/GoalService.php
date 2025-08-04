@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Repositories\GoalRepositoryInterface;
+use App\Interface\GoalRepositoryInterface;
 use Illuminate\Support\Facades\Auth;
 
 class GoalService

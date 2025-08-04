@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Repositories;
+namespace App\Interface;
 
 use App\Models\Transaction;
 use Illuminate\Pagination\LengthAwarePaginator;
+
 interface TransactionRepositoryInterface
 {
     public function getByUserId(int $userId, array $filters = []): LengthAwarePaginator;

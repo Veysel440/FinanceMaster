@@ -2,39 +2,29 @@
 
 namespace App\Services;
 
-use App\Repositories\UserRepositoryInterface;
+use App\Interface\UserRepositoryInterface;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 
 class UserService
 {
-    protected $userRepository;
-
-    public function __construct(UserRepositoryInterface $userRepository)
-    {
-        $this->userRepository = $userRepository;
-    }
+    public function __construct(
+        protected UserRepositoryInterface $userRepository
+    ) {}
 
     public function getUser(int $id): ?\App\Models\User
     {
         $user = $this->userRepository->findById($id);
-        return $user && $user->id === Auth::id() ? $user : null;
+        return ($user && $user->id === Auth::id()) ? $user : null;
     }
 
     public function updateProfile(int $id, array $data): bool
     {
         $user = $this->getUser($id);
-        if (!$user) {
-            return false;
-        }
+        if (!$user) return false;
 
-        if (isset($data['password']) && $data['password']) {
-            $data['password'] = Hash::make($data['password']);
-        } else {
+        if (empty($data['password'])) {
             unset($data['password']);
         }
-
         return $this->userRepository->update($id, $data);
     }
 
@@ -47,15 +37,7 @@ class UserService
     public function updateProfilePhoto(int $id, $file): bool
     {
         $user = $this->getUser($id);
-        if (!$user) {
-            return false;
-        }
-
-
-        if ($user->profile_photo) {
-            Storage::disk('public')->delete($user->profile_photo);
-        }
-
+        if (!$user) return false;
 
         $path = $file->store('profile-photos', 'public');
         return $this->userRepository->updateProfilePhoto($id, $path);

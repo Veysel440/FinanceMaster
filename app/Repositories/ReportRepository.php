@@ -2,8 +2,8 @@
 
 namespace App\Repositories;
 
+use App\Interface\ReportRepositoryInterface;
 use App\Models\Transaction;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class ReportRepository implements ReportRepositoryInterface
@@ -14,11 +14,11 @@ class ReportRepository implements ReportRepositoryInterface
 
         $this->applyDateFilter($query, $period, $startDate, $endDate);
 
-        $income = $query->clone()->where('type', 'income')->sum('amount');
-        $expense = $query->clone()->where('type', 'expense')->sum('amount');
+        $income = (clone $query)->where('type', 'income')->sum('amount');
+        $expense = (clone $query)->where('type', 'expense')->sum('amount');
 
         return [
-            'income' => $income,
+            'income'  => $income,
             'expense' => $expense,
             'balance' => $income - $expense,
         ];
@@ -36,7 +36,7 @@ class ReportRepository implements ReportRepositoryInterface
         return $query->groupBy('categories.name')->get()->map(function ($item) {
             return [
                 'category' => $item->name,
-                'total' => $item->total,
+                'total' => (float) $item->total,
             ];
         })->toArray();
     }
@@ -45,19 +45,19 @@ class ReportRepository implements ReportRepositoryInterface
     {
         $query = Transaction::where('user_id', $userId)
             ->select(
-                DB::raw("DATE_FORMAT(date, '%Y-%m') as month"),
+                DB::raw("DATE_FORMAT(date, '%Y-%m') as period"),
                 DB::raw("SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as income"),
                 DB::raw("SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as expense")
             );
 
         $this->applyDateFilter($query, $period, $startDate, $endDate);
 
-        $results = $query->groupBy('month')->orderBy('month')->get();
+        $results = $query->groupBy('period')->orderBy('period')->get();
 
         return [
-            'labels' => $results->pluck('month')->toArray(),
-            'income' => $results->pluck('income')->toArray(),
-            'expense' => $results->pluck('expense')->toArray(),
+            'labels' => $results->pluck('period')->toArray(),
+            'income' => $results->pluck('income')->map(fn($v) => (float)$v)->toArray(),
+            'expense' => $results->pluck('expense')->map(fn($v) => (float)$v)->toArray(),
         ];
     }
 
@@ -69,6 +69,12 @@ class ReportRepository implements ReportRepositoryInterface
             $query->whereMonth('date', now()->month)->whereYear('date', now()->year);
         } elseif ($period === 'yearly') {
             $query->whereYear('date', now()->year);
+        } elseif ($period === 'weekly') {
+            $query->whereBetween('date', [
+                now()->startOfWeek(), now()->endOfWeek()
+            ]);
+        } elseif ($period === 'daily') {
+            $query->whereDate('date', now());
         }
     }
 }

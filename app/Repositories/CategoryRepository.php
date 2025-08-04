@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use App\Interface\CategoryRepositoryInterface;
 use App\Models\Category;
 use Illuminate\Database\Eloquent\Collection;
 

@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use App\Interface\GoalRepositoryInterface;
 use App\Models\Goal;
 use Illuminate\Database\Eloquent\Collection;
 

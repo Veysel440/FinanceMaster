@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Repositories\TransactionRepositoryInterface;
+use App\Interface\TransactionRepositoryInterface;
 use Illuminate\Support\Facades\Auth;
 
 class TransactionService

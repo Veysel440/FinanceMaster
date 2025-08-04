@@ -2,18 +2,18 @@
 
 namespace App\Providers;
 
+use App\Interface\BudgetRepositoryInterface;
+use App\Interface\CategoryRepositoryInterface;
+use App\Interface\GoalRepositoryInterface;
+use App\Interface\ReportRepositoryInterface;
+use App\Interface\TransactionRepositoryInterface;
+use App\Interface\UserRepositoryInterface;
 use App\Repositories\BudgetRepository;
-use App\Repositories\BudgetRepositoryInterface;
 use App\Repositories\CategoryRepository;
-use App\Repositories\CategoryRepositoryInterface;
 use App\Repositories\GoalRepository;
-use App\Repositories\GoalRepositoryInterface;
 use App\Repositories\ReportRepository;
-use App\Repositories\ReportRepositoryInterface;
 use App\Repositories\TransactionRepository;
-use App\Repositories\TransactionRepositoryInterface;
 use App\Repositories\UserRepository;
-use App\Repositories\UserRepositoryInterface;
 use Illuminate\Support\ServiceProvider;
 
 class RepositoryServiceProvider extends ServiceProvider

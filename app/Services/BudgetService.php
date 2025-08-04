@@ -2,39 +2,31 @@
 
 namespace App\Services;
 
-use App\Repositories\BudgetRepositoryInterface;
-use App\Repositories\CategoryRepositoryInterface;
-use Illuminate\Support\Carbon;
+use App\Interface\BudgetRepositoryInterface;
+use App\Interface\CategoryRepositoryInterface;
+use App\Notifications\BudgetLimitExceededNotification;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Carbon;
 
 class BudgetService
 {
-    protected $budgetRepository;
-    protected $categoryRepository;
-    protected $notificationService;
-
     public function __construct(
-        BudgetRepositoryInterface $budgetRepository,
-        CategoryRepositoryInterface $categoryRepository,
-        NotificationService $notificationService
-    ) {
-        $this->budgetRepository = $budgetRepository;
-        $this->categoryRepository = $categoryRepository;
-        $this->notificationService = $notificationService;
-    }
+        protected BudgetRepositoryInterface $budgetRepository,
+        protected CategoryRepositoryInterface $categoryRepository
+    ) {}
 
-    public function getUserBudgets(): \Illuminate\Database\Eloquent\Collection
+    public function getUserBudgets()
     {
         return $this->budgetRepository->getByUserId(Auth::id());
     }
 
-    public function createBudget(array $data): \App\Models\Budget
+    public function createBudget(array $data)
     {
         $data['user_id'] = Auth::id();
         return $this->budgetRepository->create($data);
     }
 
-    public function getBudget(int $id): ?\App\Models\Budget
+    public function getBudget(int $id)
     {
         $budget = $this->budgetRepository->findById($id);
         return $budget && $budget->user_id === Auth::id() ? $budget : null;
@@ -62,29 +54,15 @@ class BudgetService
         $spent = $this->budgetRepository->getSpentAmount($budget->category_id, $budget->month);
         $remaining = $budget->amount - $spent;
 
-        return [
-            'status' => $remaining >= 0 ? 'ok' : 'exceeded',
-            'spent' => $spent,
-            'remaining' => $remaining,
-            'message' => $remaining >= 0 ? 'Bütçe limitinizde.' : 'Bütçe limitiniz aşıldı!',
-        ];
-    }
-
-    public function checkBudgetsForTransaction($transaction): void
-    {
-        $budgets = $this->budgetRepository->getByUserId($transaction->user_id)
-            ->where('category_id', $transaction->category_id)
-            ->where('month', Carbon::parse($transaction->date)->format('Y-m-01'));
-
-        foreach ($budgets as $budget) {
-            $status = $this->checkBudgetStatus($budget->id);
-            if ($status['status'] === 'exceeded') {
-                $this->notificationService->sendBudgetLimitExceededNotification(
-                    $budget,
-                    $status['spent'],
-                    $status['remaining']
-                );
-            }
+        if ($remaining < 0) {
+            Auth::user()->notify(new BudgetLimitExceededNotification($budget, $spent, $remaining));
         }
+
+        return [
+            'status'    => $remaining >= 0 ? 'ok' : 'exceeded',
+            'spent'     => $spent,
+            'remaining' => $remaining,
+            'message'   => $remaining >= 0 ? 'Bütçe limitinizde.' : 'Bütçe limitiniz aşıldı!',
+        ];
     }
 }

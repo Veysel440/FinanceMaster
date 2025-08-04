@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use App\Interface\BudgetRepositoryInterface;
 use App\Models\Budget;
 use App\Models\Transaction;
 use Illuminate\Database\Eloquent\Collection;
@@ -26,7 +27,7 @@ class BudgetRepository implements BudgetRepositoryInterface
 
     public function update(int $id, array $data): bool
     {
-        return Budget::where('id', $id)->update($data);
+        return Budget::where('id', $id)->update($data) > 0;
     }
 
     public function delete(int $id): bool
@@ -37,7 +38,7 @@ class BudgetRepository implements BudgetRepositoryInterface
     public function getSpentAmount(int $categoryId, string $month): float
     {
         $startOfMonth = Carbon::parse($month)->startOfMonth();
-        $endOfMonth = Carbon::parse($month)->endOfMonth();
+        $endOfMonth   = Carbon::parse($month)->endOfMonth();
 
         return Transaction::where('category_id', $categoryId)
             ->where('type', 'expense')

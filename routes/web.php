@@ -1,12 +1,12 @@
 <?php
 
-use App\Http\Controllers\BudgetController;
-use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\GoalController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\ReportController;
-use App\Http\Controllers\TransactionController;
-use App\Http\Controllers\UserController;
+use App\Http\Controllers\Api\Budget\BudgetController;
+use App\Http\Controllers\Api\Category\CategoryController;
+use App\Http\Controllers\Api\Goal\GoalController;
+use App\Http\Controllers\Api\Profile\ProfileController;
+use App\Http\Controllers\Api\Report\ReportController;
+use App\Http\Controllers\Api\Transaction\TransactionController;
+use App\Http\Controllers\Api\User\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
