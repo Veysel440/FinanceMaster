@@ -3,97 +3,74 @@
 namespace App\Http\Controllers\Api\Transaction;
 
 use App\Http\Controllers\Controller;
-use App\Models\Category;
+use App\Http\Requests\Transaction\StoreTransactionRequest;
+use App\Http\Requests\Transaction\UpdateTransactionRequest;
+use App\Http\Resources\Transaction\TransactionResource;
 use App\Services\TransactionService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class TransactionController extends Controller
 {
-    protected $transactionService;
-
-    public function __construct(TransactionService $transactionService)
-    {
-        $this->middleware('auth');
-        $this->transactionService = $transactionService;
+    public function __construct(
+        protected TransactionService $transactionService
+    ) {
+        $this->middleware('auth:api');
     }
 
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         $filters = $request->only(['type', 'category_id']);
         $transactions = $this->transactionService->getUserTransactions($filters);
-        $categories = Category::where('user_id', auth()->id())
-            ->orWhere('is_default', true)
-            ->get();
 
-        return view('transactions.index', compact('transactions', 'categories'));
-    }
-
-    public function create()
-    {
-        $categories = Category::where('user_id', auth()->id())
-            ->orWhere('is_default', true)
-            ->get();
-
-        return view('transactions.create', compact('categories'));
-    }
-
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'category_id' => 'required|exists:categories,id',
-            'type' => 'required|in:income,expense',
-            'amount' => 'required|numeric|min:0.01',
-            'date' => 'required|date',
-            'description' => 'nullable|string|max:255',
+        return response()->json([
+            'success' => true,
+            'data'    => TransactionResource::collection($transactions),
+            'meta'    => [
+                'current_page' => $transactions->currentPage(),
+                'last_page'    => $transactions->lastPage(),
+                'total'        => $transactions->total(),
+            ],
         ]);
-
-        $this->transactionService->createTransaction($validated);
-
-        return redirect()->route('transactions.index')
-            ->with('success', 'İşlem başarıyla eklendi.');
     }
 
-    public function edit($id)
+    public function store(StoreTransactionRequest $request): JsonResponse
+    {
+        $transaction = $this->transactionService->createTransaction($request->validated());
+        return response()->json([
+            'success' => true,
+            'message' => 'İşlem başarıyla eklendi.',
+            'data'    => new TransactionResource($transaction),
+        ], 201);
+    }
+
+    public function show($id): JsonResponse
     {
         $transaction = $this->transactionService->getTransaction($id);
         if (!$transaction) {
-            return redirect()->route('transactions.index')->with('error', 'İşlem bulunamadı.');
+            return response()->json(['success' => false, 'message' => 'İşlem bulunamadı.'], 404);
         }
-
-        $categories = Category::where('user_id', auth()->id())
-            ->orWhere('is_default', true)
-            ->get();
-
-        return view('transactions.edit', compact('transaction', 'categories'));
-    }
-
-    public function update(Request $request, $id)
-    {
-        $validated = $request->validate([
-            'category_id' => 'required|exists:categories,id',
-            'type' => 'required|in:income,expense',
-            'amount' => 'required|numeric|min:0.01',
-            'date' => 'required|date',
-            'description' => 'nullable|string|max:255',
+        return response()->json([
+            'success' => true,
+            'data'    => new TransactionResource($transaction),
         ]);
-
-        if ($this->transactionService->updateTransaction($id, $validated)) {
-            return redirect()->route('transactions.index')
-                ->with('success', 'İşlem başarıyla güncellendi.');
-        }
-
-        return redirect()->route('transactions.index')
-            ->with('error', 'İşlem güncellenemedi.');
     }
 
-    public function destroy($id)
+    public function update(UpdateTransactionRequest $request, $id): JsonResponse
     {
-        if ($this->transactionService->deleteTransaction($id)) {
-            return redirect()->route('transactions.index')
-                ->with('success', 'İşlem başarıyla silindi.');
+        $updated = $this->transactionService->updateTransaction($id, $request->validated());
+        if ($updated) {
+            return response()->json(['success' => true, 'message' => 'İşlem güncellendi.']);
         }
+        return response()->json(['success' => false, 'message' => 'İşlem güncellenemedi.'], 400);
+    }
 
-        return redirect()->route('transactions.index')
-            ->with('error', 'İşlem silinemedi.');
+    public function destroy($id): JsonResponse
+    {
+        $deleted = $this->transactionService->deleteTransaction($id);
+        if ($deleted) {
+            return response()->json(['success' => true, 'message' => 'İşlem silindi.']);
+        }
+        return response()->json(['success' => false, 'message' => 'İşlem silinemedi.'], 400);
     }
 }

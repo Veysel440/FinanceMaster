@@ -3,27 +3,22 @@
 namespace App\Services;
 
 use App\Interface\TransactionRepositoryInterface;
+use App\Services\BudgetService;
 use Illuminate\Support\Facades\Auth;
 
 class TransactionService
 {
-    protected $transactionRepository;
-    protected $budgetService;
-
     public function __construct(
-        TransactionRepositoryInterface $transactionRepository,
-        BudgetService $budgetService
-    ) {
-        $this->transactionRepository = $transactionRepository;
-        $this->budgetService = $budgetService;
-    }
+        protected TransactionRepositoryInterface $transactionRepository,
+        protected BudgetService $budgetService
+    ) {}
 
-    public function getUserTransactions(array $filters = []): \Illuminate\Pagination\LengthAwarePaginator
+    public function getUserTransactions(array $filters = [])
     {
         return $this->transactionRepository->getByUserId(Auth::id(), $filters);
     }
 
-    public function createTransaction(array $data): \App\Models\Transaction
+    public function createTransaction(array $data)
     {
         $data['user_id'] = Auth::id();
         $transaction = $this->transactionRepository->create($data);
@@ -35,23 +30,16 @@ class TransactionService
         return $transaction;
     }
 
-    public function getTransaction(int $id): ?\App\Models\Transaction
+    public function getTransaction(int $id)
     {
         $transaction = $this->transactionRepository->findById($id);
-
-        if ($transaction && $transaction->user_id === Auth::id()) {
-            return $transaction;
-        }
-
-        return null;
+        return ($transaction && $transaction->user_id === Auth::id()) ? $transaction : null;
     }
 
     public function updateTransaction(int $id, array $data): bool
     {
         $transaction = $this->getTransaction($id);
-        if (!$transaction) {
-            return false;
-        }
+        if (!$transaction) return false;
 
         $updated = $this->transactionRepository->update($id, $data);
 
@@ -66,10 +54,6 @@ class TransactionService
     public function deleteTransaction(int $id): bool
     {
         $transaction = $this->getTransaction($id);
-        if (!$transaction) {
-            return false;
-        }
-
-        return $this->transactionRepository->delete($id);
+        return $transaction ? $this->transactionRepository->delete($id) : false;
     }
 }

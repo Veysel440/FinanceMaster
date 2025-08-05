@@ -10,17 +10,16 @@ class TransactionRepository implements TransactionRepositoryInterface
 {
     public function getByUserId(int $userId, array $filters = []): LengthAwarePaginator
     {
-        $query = Transaction::where('user_id', $userId)->with('category');
+        $query = Transaction::with('category')->where('user_id', $userId);
 
         if (!empty($filters['type'])) {
             $query->where('type', $filters['type']);
         }
-
         if (!empty($filters['category_id'])) {
             $query->where('category_id', $filters['category_id']);
         }
 
-        return $query->latest()->paginate(10);
+        return $query->latest('date')->paginate(10);
     }
 
     public function create(array $data): Transaction
@@ -30,12 +29,12 @@ class TransactionRepository implements TransactionRepositoryInterface
 
     public function findById(int $id): ?Transaction
     {
-        return Transaction::find($id);
+        return Transaction::with('category')->find($id);
     }
 
     public function update(int $id, array $data): bool
     {
-        return Transaction::where('id', $id)->update($data);
+        return Transaction::where('id', $id)->update($data) > 0;
     }
 
     public function delete(int $id): bool

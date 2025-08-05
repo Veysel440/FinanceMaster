@@ -10,15 +10,11 @@ class CategoryRepository implements CategoryRepositoryInterface
 {
     public function getByUserId(int $userId, bool $includeDefault = true): Collection
     {
-        $query = Category::query();
-
-        if ($includeDefault) {
-            $query->where('user_id', $userId)->orWhere('is_default', true);
-        } else {
-            $query->where('user_id', $userId);
-        }
-
-        return $query->get();
+        return Category::when(!$includeDefault, fn($q) => $q->where('user_id', $userId))
+            ->when($includeDefault, fn($q) => $q->where(function($q2) use ($userId) {
+                $q2->where('user_id', $userId)->orWhere('is_default', true);
+            }))
+            ->get();
     }
 
     public function create(array $data): Category
@@ -33,7 +29,7 @@ class CategoryRepository implements CategoryRepositoryInterface
 
     public function update(int $id, array $data): bool
     {
-        return Category::where('id', $id)->update($data);
+        return Category::where('id', $id)->update($data) > 0;
     }
 
     public function delete(int $id): bool
@@ -43,6 +39,6 @@ class CategoryRepository implements CategoryRepositoryInterface
 
     public function hasTransactions(int $id): bool
     {
-        return Category::where('id', $id)->has('transactions')->exists();
+        return Category::find($id)?->transactions()->exists() ?? false;
     }
 }

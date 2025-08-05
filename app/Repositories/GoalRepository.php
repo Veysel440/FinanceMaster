@@ -25,7 +25,7 @@ class GoalRepository implements GoalRepositoryInterface
 
     public function update(int $id, array $data): bool
     {
-        return Goal::where('id', $id)->update($data);
+        return Goal::where('id', $id)->update($data) > 0;
     }
 
     public function delete(int $id): bool

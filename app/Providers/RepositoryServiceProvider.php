@@ -21,12 +21,18 @@ class RepositoryServiceProvider extends ServiceProvider
 
     public function register(): void
     {
-        $this->app->bind(TransactionRepositoryInterface::class, TransactionRepository::class);
-        $this->app->bind(CategoryRepositoryInterface::class, CategoryRepository::class);
-        $this->app->bind(BudgetRepositoryInterface::class, BudgetRepository::class);
-        $this->app->bind(GoalRepositoryInterface::class, GoalRepository::class);
-        $this->app->bind(ReportRepositoryInterface::class, ReportRepository::class);
-        $this->app->bind(UserRepositoryInterface::class, UserRepository::class);
+        $repositories = [
+            TransactionRepositoryInterface::class => TransactionRepository::class,
+            CategoryRepositoryInterface::class    => CategoryRepository::class,
+            BudgetRepositoryInterface::class      => BudgetRepository::class,
+            GoalRepositoryInterface::class        => GoalRepository::class,
+            ReportRepositoryInterface::class      => ReportRepository::class,
+            UserRepositoryInterface::class        => UserRepository::class,
+        ];
+
+        foreach ($repositories as $interface => $implementation) {
+            $this->app->bind($interface, $implementation);
+        }
     }
 
 

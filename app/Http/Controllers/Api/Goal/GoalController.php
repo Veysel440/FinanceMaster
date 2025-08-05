@@ -3,87 +3,66 @@
 namespace App\Http\Controllers\Api\Goal;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Goal\StoreGoalRequest;
+use App\Http\Requests\Goal\UpdateGoalRequest;
+use App\Http\Resources\Goal\GoalResource;
 use App\Services\GoalService;
-use Illuminate\Http\Request;
-
+use Illuminate\Http\JsonResponse;
 
 class GoalController extends Controller
 {
-    protected $goalService;
-
-    public function __construct(GoalService $goalService)
-    {
-        $this->middleware('auth');
-        $this->goalService = $goalService;
+    public function __construct(
+        protected GoalService $goalService
+    ) {
+        $this->middleware('auth:api');
     }
 
-    public function index()
+    public function index(): JsonResponse
     {
-        $goals = $this->goalService->getUserGoals()->map(function ($goal) {
-            $progress = $this->goalService->getGoalProgress($goal->id);
-            $goal->progress = $progress;
-            return $goal;
-        });
-
-        return view('goals.index', compact('goals'));
-    }
-
-    public function create()
-    {
-        return view('goals.create');
-    }
-
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'target_amount' => 'required|numeric|min:0.01',
-            'current_amount' => 'nullable|numeric|min:0',
-            'end_date' => 'required|date|after:today',
+        $goals = $this->goalService->getUserGoals();
+        return response()->json([
+            'success' => true,
+            'data'    => GoalResource::collection($goals),
         ]);
-
-        $this->goalService->createGoal($validated);
-
-        return redirect()->route('goals.index')
-            ->with('success', 'Hedef başarıyla eklendi.');
     }
 
-    public function edit($id)
+    public function store(StoreGoalRequest $request): JsonResponse
+    {
+        $goal = $this->goalService->createGoal($request->validated());
+        return response()->json([
+            'success' => true,
+            'message' => 'Hedef başarıyla eklendi.',
+            'data'    => new GoalResource($goal),
+        ], 201);
+    }
+
+    public function show($id): JsonResponse
     {
         $goal = $this->goalService->getGoal($id);
         if (!$goal) {
-            return redirect()->route('goals.index')->with('error', 'Hedef bulunamadı.');
+            return response()->json(['success' => false, 'message' => 'Hedef bulunamadı.'], 404);
         }
-
-        return view('goals.edit', compact('goal'));
-    }
-
-    public function update(Request $request, $id)
-    {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'target_amount' => 'required|numeric|min:0.01',
-            'current_amount' => 'nullable|numeric|min:0',
-            'end_date' => 'required|date|after:today',
+        return response()->json([
+            'success' => true,
+            'data'    => new GoalResource($goal),
         ]);
-
-        if ($this->goalService->updateGoal($id, $validated)) {
-            return redirect()->route('goals.index')
-                ->with('success', 'Hedef başarıyla güncellendi.');
-        }
-
-        return redirect()->route('goals.index')
-            ->with('error', 'Hedef güncellenemedi.');
     }
 
-    public function destroy($id)
+    public function update(UpdateGoalRequest $request, $id): JsonResponse
     {
-        if ($this->goalService->deleteGoal($id)) {
-            return redirect()->route('goals.index')
-                ->with('success', 'Hedef başarıyla silindi.');
+        $updated = $this->goalService->updateGoal($id, $request->validated());
+        if ($updated) {
+            return response()->json(['success' => true, 'message' => 'Hedef başarıyla güncellendi.']);
         }
+        return response()->json(['success' => false, 'message' => 'Hedef güncellenemedi.'], 400);
+    }
 
-        return redirect()->route('goals.index')
-            ->with('error', 'Hedef silinemedi.');
+    public function destroy($id): JsonResponse
+    {
+        $deleted = $this->goalService->deleteGoal($id);
+        if ($deleted) {
+            return response()->json(['success' => true, 'message' => 'Hedef başarıyla silindi.']);
+        }
+        return response()->json(['success' => false, 'message' => 'Hedef silinemedi.'], 400);
     }
 }
