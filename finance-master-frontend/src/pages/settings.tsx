@@ -1,76 +1,98 @@
-import React, { useState } from "react";
-import api from "../api/axios";
-import toast from "react-hot-toast";
+import React, { useEffect } from "react";
 import ProtectedRoute from "../components/ProtectedRoute";
+import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
+import api from "../api/axios";
+import { useAuth } from "../context/AuthContext";
 
-const Settings = () => {
-    const [form, setForm] = useState({ current_password: "", new_password: "", new_password_confirmation: "" });
-    const [loading, setLoading] = useState(false);
+type SettingsForm = {
+    currency: "TRY" | "USD" | "EUR";
+    locale: "tr" | "en";
+    email_reports: boolean;
+    theme: "light" | "dark" | "system";
+};
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+export default function Settings() {
+    const { user, setUser } = useAuth() as any;
+    const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm<SettingsForm>({
+        defaultValues: { currency: "TRY", locale: "tr", email_reports: true, theme: "system" }
+    });
+
+    useEffect(() => {
+        if (user) {
+            reset({
+                currency: user.currency ?? "TRY",
+                locale: user.locale ?? "tr",
+                email_reports: !!user.email_reports,
+                theme: (localStorage.getItem("theme") as SettingsForm["theme"]) ?? "system",
+            });
+        }
+    }, [user, reset]);
+
+    const applyTheme = (theme: SettingsForm["theme"]) => {
+        const root = document.documentElement;
+        if (theme === "system") {
+            const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+            root.classList.toggle("dark", prefersDark);
+            localStorage.setItem("theme", "system");
+        } else {
+            root.classList.toggle("dark", theme === "dark");
+            localStorage.setItem("theme", theme);
+        }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (form.new_password !== form.new_password_confirmation) {
-            toast.error("Yeni şifreler eşleşmiyor!"); return;
-        }
-        setLoading(true);
+    const onSubmit = async (data: SettingsForm) => {
         try {
-            await api.put("/password", {
-                current_password: form.current_password,
-                password: form.new_password,
-                password_confirmation: form.new_password_confirmation,
-            });
-            toast.success("Şifre güncellendi!");
-            setForm({ current_password: "", new_password: "", new_password_confirmation: "" });
-        } catch (err: any) {
-            toast.error(err?.response?.data?.message || "Şifre güncellenemedi!");
+            await api.post("/settings", { currency: data.currency, locale: data.locale, email_reports: data.email_reports });
+            setUser && setUser({ ...user, currency: data.currency, locale: data.locale, email_reports: data.email_reports });
+            applyTheme(data.theme);
+            toast.success("Ayarlar güncellendi");
+        } catch {
+            toast.error("Ayarlar kaydedilemedi");
         }
-        setLoading(false);
     };
 
     return (
         <ProtectedRoute>
-            <div className="max-w-lg mx-auto p-4">
-                <h2 className="text-lg font-bold mb-3">Şifre Değiştir</h2>
-                <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-                    <input
-                        name="current_password"
-                        value={form.current_password}
-                        onChange={handleChange}
-                        type="password"
-                        placeholder="Mevcut şifre"
-                        className="border rounded p-2"
-                        required
-                    />
-                    <input
-                        name="new_password"
-                        value={form.new_password}
-                        onChange={handleChange}
-                        type="password"
-                        placeholder="Yeni şifre"
-                        className="border rounded p-2"
-                        minLength={8}
-                        required
-                    />
-                    <input
-                        name="new_password_confirmation"
-                        value={form.new_password_confirmation}
-                        onChange={handleChange}
-                        type="password"
-                        placeholder="Yeni şifre (tekrar)"
-                        className="border rounded p-2"
-                        minLength={8}
-                        required
-                    />
-                    <button type="submit" disabled={loading} className="bg-blue-600 text-white px-4 py-2 rounded">
-                        {loading ? "Güncelleniyor..." : "Şifreyi Güncelle"}
+            <main className="max-w-lg mx-auto p-4 space-y-4">
+                <h2 className="text-xl font-bold">Ayarlar</h2>
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+                    <div>
+                        <label className="block text-sm mb-1">Para Birimi</label>
+                        <select {...register("currency")} className="border rounded p-2 w-full">
+                            <option value="TRY">TRY</option>
+                            <option value="USD">USD</option>
+                            <option value="EUR">EUR</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm mb-1">Dil</label>
+                        <select {...register("locale")} className="border rounded p-2 w-full">
+                            <option value="tr">Türkçe</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+
+                    <label className="flex items-center gap-2">
+                        <input type="checkbox" {...register("email_reports")} />
+                        Aylık e-posta özeti al
+                    </label>
+
+                    <div>
+                        <label className="block text-sm mb-1">Tema</label>
+                        <select {...register("theme")} className="border rounded p-2 w-full">
+                            <option value="system">Sistem</option>
+                            <option value="light">Açık</option>
+                            <option value="dark">Koyu</option>
+                        </select>
+                    </div>
+
+                    <button disabled={isSubmitting} className="px-4 py-2 rounded bg-blue-600 text-white">
+                        {isSubmitting ? "Kaydediliyor…" : "Kaydet"}
                     </button>
                 </form>
-            </div>
+            </main>
         </ProtectedRoute>
     );
-};
-export default Settings;
+}

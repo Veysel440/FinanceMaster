@@ -1,36 +1,29 @@
 import React, { useEffect, useState } from "react";
-
-const ThemeSwitch = () => {
-    const [isDark, setIsDark] = useState(false);
-
+export default function ThemeSwitch() {
+    const [mode, setMode] = useState<"light"|"dark"|"system">("system");
     useEffect(() => {
-        const saved = localStorage.getItem("theme");
-        if (saved === "dark") {
-            document.documentElement.classList.add("dark");
-            setIsDark(true);
-        }
+        const saved = (localStorage.getItem("theme") as typeof mode) || "system";
+        setMode(saved);
     }, []);
-
-    const toggleTheme = () => {
-        if (document.documentElement.classList.contains("dark")) {
-            document.documentElement.classList.remove("dark");
-            localStorage.setItem("theme", "light");
-            setIsDark(false);
+    const apply = (v: typeof mode) => {
+        const root = document.documentElement;
+        if (v === "system") {
+            const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+            root.classList.toggle("dark", prefersDark);
         } else {
-            document.documentElement.classList.add("dark");
-            localStorage.setItem("theme", "dark");
-            setIsDark(true);
+            root.classList.toggle("dark", v === "dark");
         }
+        localStorage.setItem("theme", v);
+        setMode(v);
     };
-
     return (
-        <button
-            onClick={toggleTheme}
-            className="ml-3 px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white border"
-            aria-label="Tema değiştir"
-        >
-            {isDark ? "🌙 Koyu" : "☀️ Açık"}
-        </button>
+        <div className="inline-flex items-center gap-2 text-sm">
+            <span>Tema:</span>
+            <select className="border rounded px-2 py-1 bg-white dark:bg-gray-800" value={mode} onChange={e => apply(e.target.value as any)}>
+                <option value="system">Sistem</option>
+                <option value="light">Açık</option>
+                <option value="dark">Koyu</option>
+            </select>
+        </div>
     );
-};
-export default ThemeSwitch;
+}
