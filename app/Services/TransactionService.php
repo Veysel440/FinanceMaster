@@ -24,7 +24,7 @@ class TransactionService
         $transaction = $this->transactionRepository->create($data);
 
         if ($transaction->type === 'expense') {
-            $this->budgetService->checkBudgetsForTransaction($transaction);
+            $this->budgetService->checkBudgetsForTransaction($transaction->user_id, $transaction);
         }
 
         return $transaction;
@@ -45,7 +45,7 @@ class TransactionService
 
         if ($updated && $data['type'] === 'expense') {
             $updatedTransaction = $this->getTransaction($id);
-            $this->budgetService->checkBudgetsForTransaction($updatedTransaction);
+            $this->budgetService->checkBudgetsForTransaction($updatedTransaction->user_id, $updatedTransaction);
         }
 
         return $updated;
