@@ -13,9 +13,7 @@ class GoalController extends Controller
 {
     public function __construct(
         protected GoalService $goalService
-    ) {
-        $this->middleware('auth:api');
-    }
+    ) {}
 
     public function index(): JsonResponse
     {

@@ -12,9 +12,7 @@ class ReportController extends Controller
 {
     public function __construct(
         protected ReportService $reportService
-    ) {
-        $this->middleware('auth:api');
-    }
+    ) {}
 
     public function summary(ReportFilterRequest $request): JsonResponse
     {

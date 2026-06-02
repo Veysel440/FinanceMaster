@@ -13,9 +13,7 @@ class BudgetController extends Controller
 {
     public function __construct(
         protected BudgetService $budgetService
-    ) {
-        $this->middleware('auth:api');
-    }
+    ) {}
 
     public function index(): JsonResponse
     {

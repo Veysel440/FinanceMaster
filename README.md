@@ -44,6 +44,62 @@ We would like to extend our thanks to the following sponsors for funding Laravel
 - **[Redberry](https://redberry.international/laravel-development/)**
 - **[Active Logic](https://activelogic.com)**
 
+## Geliştirme Ortamı Kurulumu
+
+### Gereksinimler
+- PHP 8.2+
+- Composer
+- Node.js 18+
+
+### PHP Eklentileri
+Aşağıdaki PHP eklentilerinin etkin olması gerekir:
+
+**SQLite (geliştirme için):**
+`php.ini` dosyasında aşağıdaki satırdan `;` kaldır:
+
+```
+;extension=pdo_sqlite
+```
+
+Sonra:
+
+```bash
+php artisan migrate
+```
+
+**MySQL (üretim/CI için):**
+`.env` dosyasında:
+
+```
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_DATABASE=financemaster
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+### İlk Kurulum
+
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+php artisan db:seed
+```
+
+### Frontend (Next.js SPA)
+
+```bash
+cd finance-master-frontend
+npm install
+npm run dev
+```
+
+Frontend `http://localhost:3000` üzerinde çalışır; API ile cross-origin
+istek atar (CORS ve Sanctum stateful domain'leri `config/cors.php` ve
+`config/sanctum.php` içinde tanımlıdır).
+
 ## Contributing
 
 Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
