@@ -14,6 +14,8 @@ use App\Repositories\GoalRepository;
 use App\Repositories\ReportRepository;
 use App\Repositories\TransactionRepository;
 use App\Repositories\UserRepository;
+use App\Services\Contracts\UserServiceInterface;
+use App\Services\UserService;
 use Illuminate\Support\ServiceProvider;
 
 class RepositoryServiceProvider extends ServiceProvider
@@ -33,6 +35,8 @@ class RepositoryServiceProvider extends ServiceProvider
         foreach ($repositories as $interface => $implementation) {
             $this->app->bind($interface, $implementation);
         }
+
+        $this->app->bind(UserServiceInterface::class, UserService::class);
     }
 
 

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Auth\ApiAuthController;
 use App\Http\Controllers\Api\Budget\BudgetController;
 use App\Http\Controllers\Api\Category\CategoryController;
 use App\Http\Controllers\Api\Goal\GoalController;
@@ -9,7 +10,16 @@ use App\Http\Controllers\Api\User\UserController;
 use Illuminate\Support\Facades\Route;
 
 
+Route::post('login', [ApiAuthController::class, 'login'])
+    ->middleware('throttle:5,1');
+
+Route::post('register', [ApiAuthController::class, 'register'])
+    ->middleware('throttle:10,1');
+
+
 Route::middleware('auth:sanctum')->group(function () {
+    Route::post('logout', [ApiAuthController::class, 'logout']);
+
     Route::apiResource('transactions', TransactionController::class);
     Route::apiResource('categories', CategoryController::class);
     Route::apiResource('budgets', BudgetController::class);
