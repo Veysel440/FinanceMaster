@@ -7,7 +7,7 @@ use App\Http\Requests\User\UpdateProfilePhotoRequest;
 use App\Http\Requests\User\UpdateProfileRequest;
 use App\Http\Requests\User\UpdateSettingsRequest;
 use App\Http\Resources\User\UserResource;
-use App\Services\UserServiceInterface;
+use App\Services\Contracts\UserServiceInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 

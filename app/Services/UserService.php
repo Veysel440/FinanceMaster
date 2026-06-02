@@ -3,9 +3,10 @@
 namespace App\Services;
 
 use App\Interface\UserRepositoryInterface;
+use App\Services\Contracts\UserServiceInterface;
 use Illuminate\Support\Facades\Auth;
 
-class UserService
+class UserService implements UserServiceInterface
 {
     public function __construct(
         protected UserRepositoryInterface $userRepository
