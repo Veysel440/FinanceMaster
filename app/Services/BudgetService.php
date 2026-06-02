@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Interface\BudgetRepositoryInterface;
 use App\Interface\CategoryRepositoryInterface;
+use App\Models\Transaction;
 use App\Notifications\BudgetLimitExceededNotification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Carbon;
@@ -64,5 +65,23 @@ class BudgetService
             'remaining' => $remaining,
             'message'   => $remaining >= 0 ? 'Bütçe limitinizde.' : 'Bütçe limitiniz aşıldı!',
         ];
+    }
+
+    /**
+     * After a new transaction is recorded, iterate the user's active budgets
+     * and fire over-budget notifications where the spending limit is exceeded.
+     * No-op for income-type transactions.
+     */
+    public function checkBudgetsForTransaction(int $userId, Transaction $transaction): void
+    {
+        if ($transaction->type !== 'expense') {
+            return;
+        }
+
+        $budgets = $this->budgetRepository->getByUserId($userId);
+
+        foreach ($budgets as $budget) {
+            $this->checkBudgetStatus($budget->id);
+        }
     }
 }

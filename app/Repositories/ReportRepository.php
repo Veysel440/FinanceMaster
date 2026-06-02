@@ -43,9 +43,11 @@ class ReportRepository implements ReportRepositoryInterface
 
     public function getTrendData(int $userId, string $period, ?string $startDate = null, ?string $endDate = null): array
     {
+        $yearMonth = $this->yearMonthExpression('date');
+
         $query = Transaction::where('user_id', $userId)
             ->select(
-                DB::raw("DATE_FORMAT(date, '%Y-%m') as period"),
+                DB::raw("{$yearMonth} as period"),
                 DB::raw("SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as income"),
                 DB::raw("SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as expense")
             );
@@ -59,6 +61,20 @@ class ReportRepository implements ReportRepositoryInterface
             'income' => $results->pluck('income')->map(fn($v) => (float)$v)->toArray(),
             'expense' => $results->pluck('expense')->map(fn($v) => (float)$v)->toArray(),
         ];
+    }
+
+    /**
+     * Build a year-month grouping SQL expression for the configured DB driver.
+     * Falls back to MySQL-style DATE_FORMAT for unknown drivers.
+     */
+    private function yearMonthExpression(string $column = 'date'): string
+    {
+        return match (config('database.default')) {
+            'mysql', 'mariadb' => "DATE_FORMAT({$column}, '%Y-%m')",
+            'sqlite'           => "strftime('%Y-%m', {$column})",
+            'pgsql'            => "TO_CHAR({$column}, 'YYYY-MM')",
+            default            => "DATE_FORMAT({$column}, '%Y-%m')",
+        };
     }
 
     protected function applyDateFilter($query, string $period, ?string $startDate, ?string $endDate): void
