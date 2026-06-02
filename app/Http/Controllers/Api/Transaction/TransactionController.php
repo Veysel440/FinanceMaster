@@ -14,9 +14,7 @@ class TransactionController extends Controller
 {
     public function __construct(
         protected TransactionService $transactionService
-    ) {
-        $this->middleware('auth:api');
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
     {

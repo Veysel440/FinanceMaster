@@ -13,9 +13,7 @@ class CategoryController extends Controller
 {
     public function __construct(
         protected CategoryService $categoryService
-    ) {
-        $this->middleware('auth:api');
-    }
+    ) {}
 
     public function index(): JsonResponse
     {
