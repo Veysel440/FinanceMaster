@@ -26,3 +26,7 @@ yarn-error.log
 *.stackdump
 README.md.bak
 *.bak
+
+# PR-09 observability logs (rotated daily)
+storage/logs/*.log
+!storage/logs/.gitkeep

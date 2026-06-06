@@ -4,13 +4,15 @@ namespace App\Services;
 
 use App\Interface\TransactionRepositoryInterface;
 use App\Services\BudgetService;
+use App\Services\FinancialLogger;
 use Illuminate\Support\Facades\Auth;
 
 class TransactionService
 {
     public function __construct(
         protected TransactionRepositoryInterface $transactionRepository,
-        protected BudgetService $budgetService
+        protected BudgetService $budgetService,
+        protected FinancialLogger $financialLogger
     ) {}
 
     public function getUserTransactions(array $filters = [])
@@ -22,6 +24,14 @@ class TransactionService
     {
         $data['user_id'] = Auth::id();
         $transaction = $this->transactionRepository->create($data);
+
+        $this->financialLogger->transactionCreated(
+            $transaction->user_id,
+            $transaction->id,
+            $transaction->type,
+            (float) $transaction->amount,
+            $transaction->category_id,
+        );
 
         if ($transaction->type === 'expense') {
             $this->budgetService->checkBudgetsForTransaction($transaction->user_id, $transaction);
@@ -43,9 +53,17 @@ class TransactionService
 
         $updated = $this->transactionRepository->update($id, $data);
 
-        if ($updated && $data['type'] === 'expense') {
-            $updatedTransaction = $this->getTransaction($id);
-            $this->budgetService->checkBudgetsForTransaction($updatedTransaction->user_id, $updatedTransaction);
+        if ($updated) {
+            $this->financialLogger->transactionUpdated(
+                $transaction->user_id,
+                $transaction->id,
+                $data,
+            );
+
+            if (($data['type'] ?? null) === 'expense') {
+                $updatedTransaction = $this->getTransaction($id);
+                $this->budgetService->checkBudgetsForTransaction($updatedTransaction->user_id, $updatedTransaction);
+            }
         }
 
         return $updated;
@@ -54,6 +72,12 @@ class TransactionService
     public function deleteTransaction(int $id): bool
     {
         $transaction = $this->getTransaction($id);
-        return $transaction ? $this->transactionRepository->delete($id) : false;
+        if (!$transaction) return false;
+
+        $deleted = $this->transactionRepository->delete($id);
+        if ($deleted) {
+            $this->financialLogger->transactionDeleted($transaction->user_id, $transaction->id);
+        }
+        return $deleted;
     }
 }

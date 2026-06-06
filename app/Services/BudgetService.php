@@ -6,6 +6,7 @@ use App\Interface\BudgetRepositoryInterface;
 use App\Interface\CategoryRepositoryInterface;
 use App\Models\Transaction;
 use App\Notifications\BudgetLimitExceededNotification;
+use App\Services\FinancialLogger;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Carbon;
 
@@ -13,7 +14,8 @@ class BudgetService
 {
     public function __construct(
         protected BudgetRepositoryInterface $budgetRepository,
-        protected CategoryRepositoryInterface $categoryRepository
+        protected CategoryRepositoryInterface $categoryRepository,
+        protected FinancialLogger $financialLogger
     ) {}
 
     public function getUserBudgets()
@@ -57,6 +59,14 @@ class BudgetService
 
         if ($remaining < 0) {
             Auth::user()->notify(new BudgetLimitExceededNotification($budget, $spent, $remaining));
+
+            $this->financialLogger->budgetExceeded(
+                $budget->user_id,
+                $budget->id,
+                (float) $budget->amount,
+                (float) $spent,
+                $budget->amount > 0 ? round(($spent / $budget->amount) * 100, 1) : 0,
+            );
         }
 
         return [
