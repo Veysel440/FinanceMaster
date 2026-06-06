@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\AuthLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -12,6 +13,10 @@ use Illuminate\Validation\ValidationException;
 
 class ApiAuthController extends Controller
 {
+    public function __construct(
+        protected AuthLogger $authLogger
+    ) {}
+
     public function login(Request $request): JsonResponse
     {
         $credentials = $request->validate([
@@ -23,12 +28,16 @@ class ApiAuthController extends Controller
         $user = User::where('email', $credentials['email'])->first();
 
         if (! $user || ! Hash::check($credentials['password'], $user->password)) {
+            $this->authLogger->loginFailed($credentials['email']);
+
             throw ValidationException::withMessages([
                 'email' => __('auth.failed'),
             ]);
         }
 
         $token = $user->createToken($credentials['device_name'] ?? 'api-token')->plainTextToken;
+
+        $this->authLogger->loginSuccess($user->id, $user->email);
 
         return response()->json([
             'token'      => $token,
@@ -57,6 +66,8 @@ class ApiAuthController extends Controller
 
         $token = $user->createToken('api-token')->plainTextToken;
 
+        $this->authLogger->registered($user->id, $user->email);
+
         return response()->json([
             'token'      => $token,
             'token_type' => 'Bearer',
@@ -70,7 +81,10 @@ class ApiAuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
+        $userId = $request->user()->id;
         $request->user()->currentAccessToken()->delete();
+
+        $this->authLogger->logout($userId);
 
         return response()->json(['message' => 'Logged out']);
     }

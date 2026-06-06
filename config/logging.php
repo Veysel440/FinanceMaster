@@ -127,6 +127,41 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
+        // --- FinanceMaster observability channels (PR-09) ---
+
+        'api' => [
+            'driver' => 'daily',
+            'path'   => storage_path('logs/api.log'),
+            'level'  => 'debug',
+            'days'   => 14,
+            'formatter' => \Monolog\Formatter\JsonFormatter::class,
+        ],
+
+        // 'auth' is reserved by Laravel's auth manager namespace; use 'auth_log'.
+        'auth_log' => [
+            'driver' => 'daily',
+            'path'   => storage_path('logs/auth.log'),
+            'level'  => 'info',
+            'days'   => 30,
+            'formatter' => \Monolog\Formatter\JsonFormatter::class,
+        ],
+
+        'financial' => [
+            'driver' => 'daily',
+            'path'   => storage_path('logs/financial.log'),
+            'level'  => 'info',
+            'days'   => 90,
+            'formatter' => \Monolog\Formatter\JsonFormatter::class,
+        ],
+
+        'error_log' => [
+            'driver' => 'daily',
+            'path'   => storage_path('logs/error.log'),
+            'level'  => 'error',
+            'days'   => 30,
+            'formatter' => \Monolog\Formatter\JsonFormatter::class,
+        ],
+
     ],
 
 ];
