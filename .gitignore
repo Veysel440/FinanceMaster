@@ -21,3 +21,8 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Local artefacts
+*.stackdump
+README.md.bak
+*.bak
