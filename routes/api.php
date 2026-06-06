@@ -17,7 +17,7 @@ Route::post('register', [ApiAuthController::class, 'register'])
     ->middleware('throttle:10,1');
 
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::post('logout', [ApiAuthController::class, 'logout']);
 
     Route::apiResource('transactions', TransactionController::class);
